@@ -109,6 +109,7 @@
 ?LINT:extern hostarch
 ?LINT:change hostarch
 ?LINT:use run
+?LINT:extern is_os2
 : Try to determine whether config.sh was made on this system
 case "$config_sh" in
 '')
@@ -361,6 +362,9 @@ EOM
 		openbsd) osname=openbsd
                 	osvers="$3"
                 	;;
+		os2)	osname=os2
+			osvers="$4"
+			;;
 		POSIX-BC | posix-bc ) osname=posix-bc
 			osvers="$3"
 			;;
@@ -402,7 +406,7 @@ EOM
 ?X: where the version number can be something like [xvt]n.n
 					osname=dec_osf
 ?X: sizer knows the minor minor version: the letter
-					osvers=`sizer -v | awk '{print $3}' |  tr '[A-Z]' '[a-z]' | sed 's/^[xvt]//'`
+					osvers=`sizer -v | awk -FUNIX '{print $2}' | awk '{print $1}' |  tr '[A-Z]' '[a-z]' | sed 's/^[xvt]//'`
 					case "$osvers" in
 					[1-9].[0-9]*) ;;
 					*) osvers=`echo "$3" | sed 's/^[xvt]//'` ;;
@@ -413,7 +417,8 @@ EOM
 ?X:	hp and mips were unsupported Technology Releases -- ADO, 24/10/94
 			esac
 			;;
-		unixware) osname=svr5
+		# UnixWare 7.1.2 is known as Open UNIX 8
+		openunix|unixware) osname=svr5
 			osvers="$4"
 			;;
 		uts)	osname=uts
@@ -485,7 +490,7 @@ EOM
 			fi
 			$rm -f UU/kernel.what
 ?X: Maybe it's OS/2 or DOS or something similar
-		elif test -d c:/.; then
+		elif test -d c:/. -o -n "$is_os2" ; then
 			set X $myuname
 			osname=os2
 			osvers="$5"

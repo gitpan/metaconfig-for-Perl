@@ -8,23 +8,29 @@
 ?RCS: that same Artistic Licence; a copy of which may be found at the root
 ?RCS: of the source tree for dist 3.0.
 ?RCS:
-?MAKE:gccversion gccosandvers: cat cpp rm +cc \
+?MAKE:gccversion gccosandvers gccansipedantic: cat cpp rm +cc \
 	Mcc Myread Guess Options Oldconfig Loc osname osvers run
 ?MAKE:	-pick add $@ %<
 ?S:gccversion:
-?S:	If GNU cc (gcc) is used, this variable holds '1' or '2' to 
+?S:	If GNU cc (gcc) is used, this variable holds '1' or '2' to
 ?S:	indicate whether the compiler is version 1 or 2.  This is used in
 ?S:	setting some of the default cflags.  It is set to '' if not gcc.
 ?S:.
 ?S:gccosandvers:
-?S:	If GNU cc (gcc) is used, this variable the operating system and
-?S:	version used to compile the gcc.  It is set to '' if not gcc,
+?S:	If GNU cc (gcc) is used, this variable holds the operating system
+?S:	and version used to compile gcc.  It is set to '' if not gcc,
 ?S:	or if nothing useful can be parsed as the os version.
+?S:.
+?S:gccansipedantic:
+?S:	If GNU cc (gcc) is used, this variable will enable (if set) the
+?S:	-ansi and -pedantic ccflags for building core files (through
+?S:	cflags script). (See Porting/pumpkin.pod for full description).
 ?S:.
 ?T:gccshortvers
 ?T:incdir
-?T:d
+?T:warn
 ?D:gccversion=''
+?D:gccansipedantic=''
 ?LINT:change cpp
 ?LINT:extern ccflags
 ?LINT:extern ldflags
@@ -33,7 +39,7 @@
 ?LINT:change ccflags
 ?LINT:change ccname
 ?LINT:change locincpth
-?X: Check if they have gcc in any guise.  
+?X: Check if they have gcc in any guise.
 echo " "
 echo "Checking for GNU cc in disguise and/or its version number..." >&4
 $cat >try.c <<EOM
@@ -46,7 +52,7 @@ int main() {
 	printf("%s\n", "1");
 #endif
 #endif
-	exit(0);
+	return(0);
 }
 EOM
 if $cc -o try $ccflags $ldflags try.c; then
@@ -54,7 +60,7 @@ if $cc -o try $ccflags $ldflags try.c; then
 	case "$gccversion" in
 	'') echo "You are not using GNU cc." ;;
 	*)  echo "You are using GNU cc $gccversion."
-	    ccname=gcc	
+	    ccname=gcc
 	    ;;
 	esac
 else
@@ -108,14 +114,17 @@ case "$ccname" in
 '') ccname="$cc" ;;
 esac
 
-# gcc 3.1 complains about adding -Idirectories that it already knows about,
+# gcc 3.* complain about adding -Idirectories that they already know about,
 # so we will take those off from locincpth.
 case "$gccversion" in
 3*)
     echo "main(){}">try.c
-    for incdir in `$cc -v -c try.c 2>&1 | \
-       sed '1,/^#include <\.\.\.>/d;/^End of search list/,$d;s/^ //'` ; do
-       locincpth=`echo $locincpth | sed s!$incdir!!`
+    for incdir in $locincpth; do
+       warn=`$cc $ccflags -I$incdir -c try.c 2>&1 | \
+	     grep '^c[cp]p*[01]: warning: changing search order '`
+       if test "X$warn" != X; then
+	   locincpth=`echo " $locincpth " | sed "s! $incdir ! !"`
+       fi
     done
     $rm -f try try.*
 esac

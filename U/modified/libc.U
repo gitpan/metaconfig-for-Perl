@@ -62,6 +62,7 @@
 ?S:.
 ?T:thislib try libnames xxx xscan xrun thisname com tans file
 ?F:!libnames
+?LINT:extern PASE
 ?LINT:extern libnames
 ?LINT:change libnames
 ?LINT:change nm_opt
@@ -271,7 +272,7 @@ xrun='eval "<libc.tmp $com >libc.list"; echo "done." >&4'
 ?X: HPUX10 reportedly has trailing spaces, though I'm suprised it has
 ?X: BSD-like output.  (AD).
 xxx='[ADTSIW]'
-if com="$sed -n -e 's/__IO//' -e 's/^.* $xxx  *_[_.]*//p' -e 's/^.* $xxx  *//p'";\
+if com="$sed -n -e 's/__IO//' -e 's/^.* $xxx  *//p'";\
 	eval $xscan;\
 	$contains '^fprintf$' libc.list >/dev/null 2>&1; then
 		eval $xrun
@@ -384,12 +385,19 @@ else
 	fi
 fi
 nm_extract="$com"
-if $test -f /lib/syscalls.exp; then
+case "$PASE" in
+define)
+    echo " "
+    echo "Since you are compiling for PASE, extracting more symbols from libc.a ...">&4
+    dump -Tv /lib/libc.a | awk '$7 == "/unix" {print $5 " " $8}' | grep "^SV" | awk '{print $2}' >> libc.list
+    ;;
+*)  if $test -f /lib/syscalls.exp; then
 	echo " "
 	echo "Also extracting names from /lib/syscalls.exp for good ole AIX..." >&4
 	$sed -n 's/^\([^ 	]*\)[ 	]*syscall[0-9]*[ 	]*$/\1/p' /lib/syscalls.exp >>libc.list
-fi
-?X: remember, indentation is wrong on purpose--RAM
+    fi
+    ;;
+esac
 ;;
 esac
 $rm -f libnames libpath

@@ -40,6 +40,8 @@
 ?H:#define ARCHNAME "$archname"		/**/
 ?H:.
 ?T:xxx tarch
+?LINT:use sanelongdbl
+?F:!archname.cbu
 ?INIT:archname=''
 : determine the architecture name
 echo " "
@@ -172,4 +174,8 @@ $define)
 	;;
 esac
 @end
+if $test -f archname.cbu; then
+	echo "Your platform has some specific hints for architecture name, using them..."
+	. ./archname.cbu
+fi
 

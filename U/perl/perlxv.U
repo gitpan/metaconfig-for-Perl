@@ -11,7 +11,7 @@
 	d_nv_preserves_uv nv_preserves_uv_bits: \
 	echo rm use64bitint d_quad quadtype uquadtype \
 	d_longdbl uselongdouble longdblsize doublesize \
-	charsize shortsize intsize longsize \
+	charsize shortsize intsize longsize i_stdlib \
 	cat Compile i_inttypes test d_volatile signal_t run
 ?MAKE:	-pick add $@ %<
 ?S:ivtype:
@@ -190,6 +190,19 @@
 ?H:#define	NVSIZE		$nvsize		/**/
 ?H:#$d_nv_preserves_uv	NV_PRESERVES_UV
 ?H:#define	NV_PRESERVES_UV_BITS	$nv_preserves_uv_bits
+?H:?%<:#if UVSIZE == 8
+?H:?%<:#   ifdef BYTEORDER
+?H:?%<:#       if BYTEORDER == 0x1234
+?H:?%<:#           undef BYTEORDER
+?H:?%<:#           define BYTEORDER 0x12345678
+?H:?%<:#       else
+?H:?%<:#           if BYTEORDER == 0x4321
+?H:?%<:#               undef BYTEORDER
+?H:?%<:#               define BYTEORDER 0x87654321
+?H:?%<:#           endif
+?H:?%<:#       endif
+?H:?%<:#   endif
+?H:?%<:#endif
 ?H:.
 ?T:volatile
 
@@ -377,6 +390,10 @@ if test X"$d_volatile" = X"$define"; then
 fi
 $cat <<EOP >try.c
 #include <stdio.h>
+#$i_stdlib I_STDLIB
+#ifdef I_STDLIB
+#include <stdlib.h>
+#endif
 #include <sys/types.h>
 #include <signal.h>
 #ifdef SIGFPE
