@@ -1,0 +1,153 @@
+#!/usr/local/bin/perl -w
+use File::Basename;
+
+# WARNING:  This is site-specific.  Change to the location
+# where you have installed dist-3.0PL70.
+@std_units = glob('/u/vieraat/vieraat/jhi/Perl/lib/dist/U/*.U');
+$PWD       =      '/u/vieraat/vieraat/jhi/pp4/cfgperl';
+# @std_units = glob('/opt/dist/lib/U/*.U');
+# $PWD       = '/export/home/doughera/src/perl/p4perl';
+
+chdir U if -d './U';
+@perl_units = glob("$PWD/U/*/*.U");
+push(@perl_units, @std_units);
+
+# Get the list of config.sh symbols.  Be sure this is up to date!
+# (I run the U/mksample script first to be sure.)
+open(WANTED, "sort $PWD/Porting/config.sh|") || die "$0: open $PWD/Wanted: $!\n";
+
+print <<'EOM';
+This file contains a description of all the shell variables whose value is
+determined by the Configure script.  Variables intended for use in C
+programs (e.g. I_UNISTD) are already described in config_h.SH.  [`configpm'
+generates pod documentation for Config.pm from this file--please try to keep
+the formatting regular.]
+
+EOM
+
+foreach $file (@perl_units) {
+    open(FH, "<$file") || die "$0: open $file: $!";
+    my $base = basename($file);
+    $Loc = $file, next if $base eq 'Loc.U' and not defined $Loc;
+    while (<FH>) {
+        if (/^\?S:\w+[ \t:]/ .. /^\?S:.$/) {
+	    if (/^\?S:.$/) {
+               ($var) = ((shift @var) =~ /^(\w+)/);
+	       unless (exists $expl{$var}) {
+                   $expl{$var} = [ @var, "\n" ];
+                   $file{$var} = $base;
+               }
+	       @var = ();	     
+	    } else {
+	        s/^\?S://;	# Remove leading ?S: markers.
+	        s/^\s+/\t/;	# Ensure all lines begin with tabs.
+	        push @var, $_;
+            }
+	}
+    }
+    close(FH) || die "$0: close $file: $!";
+}
+
+die "$0: Couldn't locate Loc.U: $!" unless defined $Loc;
+
+open(FH, "<$Loc") || die "$0: open $Loc: $!";
+while (<FH>) {
+    if (/^\?(\w+):\1$/) {
+        $var = $1;
+	$expl{$var} = 1;
+	$file{$var} = 'Loc.U';
+    }
+}
+close(FH) || die "$0: close $Loc: $!";
+
+symbol:  while (defined($var = <WANTED>)) {
+    chomp $var;
+    next symbol if $var =~ /^#/;   # Skip comments
+    next symbol if $var =~ /^$/;
+    ($var, $val) = split(/=/, $var, 2);
+    $gotit = 0;
+
+    if (exists $expl{$var}) {
+	if ($file{$var} eq 'Loc.U') {
+            print "$var (Loc.U):\n";
+            if ($val eq "''") {
+	        # If we didn't have d_portable, this info might be
+	        # useful, but it still won't help with non-standard
+	        # stuff if perl is built on one system but installed
+	        # on others (this is common with Linux distributions,
+	        # for example).
+                print <<EOE;
+	This variable is defined but not used by Configure.
+	The value is a plain '' and is not useful.
+
+EOE
+            } else {
+	        print <<EOE;
+	This variable is used internally by Configure to determine the
+	full pathname (if any) of the $var program.  After Configure runs,
+	the value is reset to a plain "$var" and is not useful.
+
+EOE
+            }
+        } else {
+            print "$var ($file{$var}):\n";
+            print @{ $expl{$var} };
+	    next symbol;
+        }
+	$gotit = 1;
+    }
+    # Handle special variables from Oldsyms.U.  Since these start
+    # with capital letters, metalint considers them to be "special
+    # unit" symbols.  It's easier to define them here than to try
+    # to fool metalint any further.   --AD  22 Oct 1999
+    elsif ($var eq 'PERL_REVISION') {
+	$gotit = 1;
+	print <<'EOE';
+PERL_REVISION (Oldsyms.U):
+	In a Perl version number such as 5.6.2, this is the 5.
+	This value is manually set in patchlevel.h
+
+EOE
+    }
+    elsif ($var eq 'PERL_VERSION') {
+	$gotit = 1;
+	print <<'EOE';
+PERL_VERSION (Oldsyms.U):
+	In a Perl version number such as 5.6.2, this is the 6.
+	This value is manually set in patchlevel.h
+
+EOE
+    }
+    elsif ($var eq 'PERL_SUBVERSION') {
+	$gotit = 1;
+	print <<'EOE';
+PERL_SUBVERSION (Oldsyms.U):
+	In a Perl version number such as 5.6.2, this is the 2.
+	Values greater than 50 represent potentially unstable
+	development subversions.
+	This value is manually set in patchlevel.h
+
+EOE
+    }
+    elsif ($var eq 'PERL_APIVERSION') {
+	$gotit = 1;
+	print <<'EOE';
+PERL_APIVERSION (Oldsyms.U):
+	This value is manually set in patchlevel.h and is used
+	to set the Configure apiversion variable.
+
+EOE
+    }
+    elsif ($var eq 'CONFIGDOTSH') {
+	$gotit = 1;
+	print <<'EOE';
+CONFIGDOTSH (Oldsyms.U):
+	This is set to 'true' in config.sh so that a shell script
+	sourcing config.sh can tell if it has been sourced already.
+
+EOE
+    }
+
+    warn "$0: couldn't find $var\n"
+        if not $gotit and $var !~ /^(Author|Date|Header|Id|Locker|Log|Mcc|RCSfile|Revision|Source|State)$|_cflags$|^config_arg/;
+}
