@@ -49,12 +49,16 @@
 ?X:		
 ?X:		Andy Dougherty   Feb. 1998
 ?MAKE:Protochk: cat rm startsh eunicefix +cc +optimize +ccflags \
-	prototype 
+	prototype i_pthread usethreads
 ?MAKE:	-pick add $@ %<
 ?F:./protochk
 ?X: Comfort metalint.  All these are actually used in the protochk script.
-?T:foo status
+?T:foo status pthread_h_done
 ?LINT: change cc optimize ccflags prototype define rm
+?LINT: extern pthread_h_first
+?LINT: change pthread_h_first
+?LINT: change usethreads
+?LINT: change i_pthread
 : define a fucntion to check prototypes
 $cat > protochk <<EOSH
 $startsh
@@ -64,6 +68,9 @@ ccflags="$ccflags"
 prototype="$prototype"
 define="$define"
 rm=$rm
+usethreads=$usethreads
+i_pthread=$i_pthread
+pthread_h_first=$pthread_h_first
 EOSH
 
 $cat >> protochk <<'EOSH'
@@ -76,6 +83,14 @@ while test $# -ge 2; do
 		$define) echo "#include <$2>" >> try.c ;;
 		literal) echo "$2" >> try.c ;;
 	esac
+    # Extra magic for the benefit of systems that need pthread.h
+    # to be included early to correctly detect threadsafe functions.
+    # Such functions must guarantee themselves, though, that the usethreads
+    # and i_pthread have been defined, before calling protochk.
+    if test "$usethreads" = "$define" -a "$i_pthread" = "$define" -a "$pthread_h_first" = "$define" -a "$pthread_h_done" = ""; then
+	echo "#include <pthread.h>" >> try.c
+	pthread_h_done=yes
+    fi
     shift 2
 done
 test "$prototype" = "$define"  && echo '#define CAN_PROTOTYPE' >> try.c

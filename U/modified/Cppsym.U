@@ -38,8 +38,8 @@
 ?X: are more easily determined.  If you want to add to $al you can do
 ?X: it in Myinit.U.
 ?X: 
-?MAKE:Cppsym ccsymbols cppsymbols cppccsymbols: \
-	eunicefix Guess awk cat tr sed sort rm startsh osname exe_ext \
+?MAKE:Cppsym ccsymbols cppsymbols cppccsymbols: run \
+	eunicefix Guess awk cat tr sed sort rm startsh osname \
 	+cc +gccversion test comm uniq echo Options trnl \
 	optimize ccflags ldflags libs
 ?MAKE:	-pick add $@ %<
@@ -75,7 +75,6 @@
 ?F:!ccsym.own
 ?X: fake LINT hints
 ?LINT:change cc
-?LINT:change exe_ext
 ?LINT:change optimize
 ?LINT:change ccflags
 ?LINT:change ldflags
@@ -92,22 +91,23 @@ $echo "Guessing which symbols your C compiler and preprocessor define..." >&4
 $cat <<'EOSH' > Cppsym.know
 a29k ABI64 aegis AES_SOURCE AIX AIX32 AIX370
 AIX41 AIX42 AIX43 AIX_SOURCE aixpc ALL_SOURCE
-alliant alpha am29000 AM29000 amiga AMIGAOS AMIX
-ansi ANSI_C_SOURCE apollo ardent atarist att386 att3b BeOS
-BIG_ENDIAN BIT_MSF bsd BSD bsd43 bsd4_2 bsd4_3 BSD4_3 bsd4_4
+alliant alpha am29000 AM29000 AMD64 amiga AMIGAOS AMIX
+ansi ANSI_C_SOURCE apollo ardent ARM32 atarist att386 att3b
+BeOS BIG_ENDIAN BIT_MSF bsd BSD bsd43 bsd4_2 bsd4_3 BSD4_3 bsd4_4
 BSD_4_3 BSD_4_4 BSD_NET2 BSD_TIME BSD_TYPES BSDCOMPAT bsdi
 bull c cadmus clipper CMU COFF COMPILER_VERSION
 concurrent convex cpu cray CRAY CRAYMPP ctix CX_UX
 CYGWIN DGUX DGUX_SOURCE DJGPP dmert DOLPHIN DPX2 DSO
-Dynix DynixPTX ELF encore EPI EXTENSIONS FILE_OFFSET_BITS
-FreeBSD GCC_NEW_VARARGS gcos gcx gimpel
-GNU_SOURCE GNUC GNUC_MINOR GO32 gould GOULD_PN
+Dynix DynixPTX ELF encore EPI EXTENSIONS FAVOR_BSD
+FILE_OFFSET_BITS FreeBSD GCC_NEW_VARARGS gcos gcx gimpel
+GLIBC GLIBC_MINOR
+GNU_SOURCE GNUC GNUC_MINOR GNU_LIBRARY GO32 gould GOULD_PN
 H3050R H3050RX hbullx20 hcx host_mips
 hp200 hp300 hp700 HP700 hp800 hp9000
 hp9000s200 hp9000s300 hp9000s400 hp9000s500
 hp9000s700 hp9000s800 hp9k8 hp_osf hppa hpux HPUX_SOURCE
 i186 i286 i386 i486 i586 i686 i8086 i80960 i860 I960
-iAPX286 ibm ibm032 ibmesa IBMR2 ibmrt ILP32 ILP64
+IA64 iAPX286 ibm ibm032 ibmesa IBMR2 ibmrt ILP32 ILP64
 INLINE_INTRINSICS INTRINSICS INT64 interdata is68k ksr1
 LANGUAGE_C LARGE_FILE_API LARGEFILE64_SOURCE
 LARGEFILE_SOURCE LFS64_LARGEFILE LFS_LARGEFILE
@@ -123,7 +123,7 @@ mert MiNT mips MIPS_FPSET MIPS_ISA MIPS_SIM MIPS_SZINT
 MIPS_SZLONG MIPS_SZPTR MIPSEB MIPSEL MODERN_C motorola
 mpeix MSDOS MTXINU MULTIMAX mvs MVS n16 ncl_el ncl_mr
 NetBSD news1500 news1700 news1800 news1900 news3700
-news700 news800 news900 NeXT NLS ns16000 ns32000
+news700 news800 news900 NeXT NLS nonstopux ns16000 ns32000
 ns32016 ns32332 ns32k nsc32000
 OCS88 OEMVS OpenBSD os OS2 OS390 osf OSF1 OSF_SOURCE
 pa_risc PA_RISC1_1 PA_RISC2_0 PARAGON parisc
@@ -131,7 +131,7 @@ pc532 pdp11 PGC PIC plexus PORTAR posix
 POSIX1B_SOURCE POSIX2_SOURCE POSIX4_SOURCE
 POSIX_C_SOURCE POSIX_SOURCE POWER
 PROTOTYPES PWB pyr QNX R3000 REENTRANT RES Rhapsody RISC6000
-riscix riscos RT scs SCO sequent sgi SGI_SOURCE sinix
+riscix riscos RT S390 SA110 scs SCO sequent sgi SGI_SOURCE SH3 sinix
 SIZE_INT SIZE_LONG SIZE_PTR SOCKET_SOURCE SOCKETS_SOURCE
 sony sony_news sonyrisc sparc sparclite spectrum
 stardent stdc STDC_EXT stratos sun sun3 sun386
@@ -139,11 +139,16 @@ Sun386i svr3 svr4 SVR4_2 SVR4_SOURCE svr5
 SX system SYSTYPE_BSD SYSTYPE_BSD43 SYSTYPE_BSD44
 SYSTYPE_SVR4 SYSTYPE_SVR5 SYSTYPE_SYSV SYSV SYSV3 SYSV4 SYSV5
 sysV68 sysV88 Tek4132 Tek4300 titan
+TM3200 TM5400 TM5600
 tower tower32 tower32_200 tower32_600 tower32_700
 tower32_800 tower32_850 tss
 u370 u3b u3b2 u3b20 u3b200 u3b20d u3b5
 ultrix UMAXV UnicomPBB UnicomPBD UNICOS UNICOSMK
-unix UNIX95 UNIX99 unixpc unos USGr4 USGr4_2
+unix UNIX95 UNIX99 unixpc unos
+USE_BSD USE_FILE_OFFSET64 USE_GNU USE_ISOC9X USE_LARGEFILE USE_LARGEFILE64
+USE_MISC USE_POSIX USE_POSIX199309 USE_POSIX199506 USE_POSIX2
+USE_REENTRANT USE_SVID USE_UNIX98 USE_XOPEN USE_XOPEN_EXTENDED
+USGr4 USGr4_2
 Utek UTek UTS UWIN uxpm uxps vax venix VMESA vms xenix Xenix286
 XOPEN_SOURCE XOPEN_SOURCE_EXTENDED XPG2 XPG2_EXTENDED
 XPG3 XPG3_EXTENDED XPG4 XPG4_EXTENDED
@@ -155,8 +160,9 @@ $osname
 EOSH
 ./tr '[a-z]' '[A-Z]' < Cppsym.know > Cppsym.a
 ./tr '[A-Z]' '[a-z]' < Cppsym.know > Cppsym.b
-$cat Cppsym.a Cppsym.b | $tr ' ' $trnl | sort | uniq > Cppsym.know
-$rm -f Cppsym.a Cppsym.b
+$cat Cppsym.know > Cppsym.c
+$cat Cppsym.a Cppsym.b Cppsym.c | $tr ' ' $trnl | $sort | $uniq > Cppsym.know
+$rm -f Cppsym.a Cppsym.b Cppsym.c
 cat <<EOSH > Cppsym
 $startsh
 if $test \$# -gt 0; then
@@ -184,23 +190,25 @@ cat <<'EOCP' > try.c
 int main() {
 EOCP
 ?X: The length($1) command guards against possible empty entries.
+?X: The awk snippet is know to give heartburn to UNICOS/mk awk.
 $awk \\
 EOSH
 cat <<'EOSH' >> Cppsym.try
 'length($1) > 0 {
-    printf "#ifdef %s\n#if %s+0\nprintf(\"%s=%%ld\\n\", %s);\n#else\nprintf(\"%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
-    printf "#ifdef _%s\n#if _%s+0\nprintf(\"_%s=%%ld\\n\", _%s);\n#else\nprintf(\"_%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
-    printf "#ifdef __%s\n#if __%s+0\nprintf(\"__%s=%%ld\\n\", __%s);\n#else\nprintf(\"__%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
-    printf "#ifdef __%s__\n#if __%s__+0\nprintf(\"__%s__=%%ld\\n\", __%s__);\n#else\nprintf(\"__%s__\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
+    printf "#ifdef %s\n#if %s+0\nprintf(\"%s=%%ld\\n\", (long)%s);\n#else\nprintf(\"%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
+    printf "#ifdef _%s\n#if _%s+0\nprintf(\"_%s=%%ld\\n\", (long)_%s);\n#else\nprintf(\"_%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
+    printf "#ifdef __%s\n#if __%s+0\nprintf(\"__%s=%%ld\\n\", (long)__%s);\n#else\nprintf(\"__%s\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
+    printf "#ifdef __%s__\n#if __%s__+0\nprintf(\"__%s__=%%ld\\n\", (long)__%s__);\n#else\nprintf(\"__%s__\\n\");\n#endif\n#endif\n", $1, $1, $1, $1, $1
 }'	 >> try.c
-echo '}' >> try.c
+echo 'return 0;}' >> try.c
 EOSH
 cat <<EOSH >> Cppsym.try
 ccflags="$ccflags"
 case "$osname-$gccversion" in
 irix-) ccflags="\$ccflags -woff 1178" ;;
+os2-*) ccflags="\$ccflags -Zlinker /PM:VIO" ;;
 esac
-$cc $optimize \$ccflags $ldflags -o try try.c $libs && ./try$exe_ext
+$cc -o try $optimize \$ccflags $ldflags try.c $libs && $run ./try
 EOSH
 chmod +x Cppsym.try
 $eunicefix Cppsym.try
@@ -220,7 +228,7 @@ for i in \`$cc -v -c tmp.c 2>&1 $postprocess_cc_v\`
 do
 	case "\$i" in
 	-D*) echo "\$i" | $sed 's/^-D//';;
-	-A*) $test "$gccversion" && echo "\$i" | $sed 's/^-A\(.*\)(\(.*\))/\1=\2/';;
+	-A*) $test "$gccversion" && echo "\$i" | $sed 's/^-A//' | $sed 's/\(.*\)(\(.*\))/\1=\2/';;
 	esac
 done
 $rm -f try.c
@@ -259,7 +267,7 @@ if $test -z ccsym.raw; then
 else
 	if $test -s ccsym.com; then
 		echo "Your C compiler and pre-processor define these symbols:"
-		$sed -e 's/\(.*\)=.*/\1/' ccsym.com
+		$sed -e 's/\(..*\)=.*/\1/' ccsym.com
 		also='also '
 		symbols='ones'
 		cppccsymbols=`$cat ccsym.com`
@@ -269,7 +277,7 @@ else
 	if $test -s ccsym.cpp; then
 		$test "$also" && echo " "
 		echo "Your C pre-processor ${also}defines the following symbols:"
-		$sed -e 's/\(.*\)=.*/\1/' ccsym.cpp
+		$sed -e 's/\(..*\)=.*/\1/' ccsym.cpp
 		also='further '
 		cppsymbols=`$cat ccsym.cpp`
 		cppsymbols=`echo $cppsymbols`
@@ -278,12 +286,11 @@ else
 	if $test -s ccsym.own; then
 		$test "$also" && echo " "
 		echo "Your C compiler ${also}defines the following cpp symbols:"
-		$sed -e 's/\(.*\)=1/\1/' ccsym.own
-		$sed -e 's/\(.*\)=.*/\1/' ccsym.own | $uniq >>Cppsym.true
+		$sed -e 's/\(..*\)=1/\1/' ccsym.own
+		$sed -e 's/\(..*\)=.*/\1/' ccsym.own | $uniq >>Cppsym.true
 	        ccsymbols=`$cat ccsym.own`
 	        ccsymbols=`echo $ccsymbols`
 		$test "$silent" || sleep 1
 	fi
 fi
-$rm -f ccsym*
 

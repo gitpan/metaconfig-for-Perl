@@ -24,7 +24,8 @@
 ?X: 2- A signal.awk script to parse the output of signal.c, fill
 ?X: in gaps (up to NSIG) and move duplicates to the end.
 ?X: 3- A signal_cmd script to compile signal.c and run it
-?X: through sort -n +1 | uniq | awk -f signal.awk.
+?X: through sort -n -k 2 | uniq | awk -f signal.awk.
+?X: (we try also sort -n +1 since some old hosts don't grok sort -k)
 ?X: (This is called signal_cmd to avoid OS/2 confusion with
 ?X: signal.cmd vs. signal.
 ?X: The signal_cmd script also falls back on checking signals one at a
@@ -37,7 +38,7 @@
 ?X: This unit is then used by sig_name.U.
 ?X:
 ?MAKE:Signal: test tr rm awk cat grep startsh eunicefix sed sort uniq \
-	Findhdr cppstdin +cppflags cppminus Compile _o _exe trnl
+	Findhdr cppstdin +cppflags cppminus Compile _o _exe trnl run
 ?MAKE:	-pick add $@ %<
 ?X:all files declared as "public" since they're used from other units
 ?F:signal.c signal_cmd signal.lst signal signal.awk
@@ -55,7 +56,7 @@ else
 	xxx=`echo '#include <signal.h>' |
 	$cppstdin $cppminus $cppflags 2>/dev/null |
 	$grep '^[ 	]*#.*include' | 
-	$awk "{print \\$$fieldn}" | $sed 's!"!!g' | $sort | $uniq`
+	$awk "{print \\$$fieldn}" | $sed 's!"!!g' | $sed 's!\\\\\\\\!/!g' | $sort | $uniq`
 fi
 : Check this list of files to be sure we have parsed the cpp output ok.
 : This will also avoid potentially non-existent files, such 
@@ -205,13 +206,13 @@ $cat >>signal_cmd <<'EOS'
 
 set signal
 if eval $compile_ok; then
-	./signal$_exe | $sort -n +1 | $uniq | $awk -f signal.awk >signal.lst
+	$run ./signal$_exe | ($sort -n -k 2 2>/dev/null || $sort -n +1) | $uniq | $awk -f signal.awk >signal.lst
 else
 	echo "(I can't seem be able to compile the whole test program)" >&4
 	echo "(I'll try it in little pieces.)" >&4
 	set signal -DJUST_NSIG
 	if eval $compile_ok; then
-		./signal$_exe > signal.nsg
+		$run ./signal$_exe > signal.nsg
 		$cat signal.nsg
 	else
 		echo "I can't seem to figure out how many signals you have." >&4
@@ -232,14 +233,14 @@ EOCP
 		set signal
 		if eval $compile; then
 			echo "SIG${xx} found."
-			./signal$_exe  >> signal.ls1
+			$run ./signal$_exe  >> signal.ls1
 		else
 			echo "SIG${xx} NOT found."
 		fi
 	done
 	if $test -s signal.ls1; then
 		$cat signal.nsg signal.ls1 |
-			$sort -n +1 | $uniq | $awk -f signal.awk >signal.lst
+			$sort -n | $uniq | $awk -f signal.awk >signal.lst
 	fi
 
 fi

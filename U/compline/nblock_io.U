@@ -21,9 +21,9 @@
 ?X: Simplify here document for shells that can't handle them well.
 ?X: (Problem reported on FreeBSD; it's unclear if this helps.)  --AD
 ?X:
-?MAKE:o_nonblock eagain rd_nodata d_eofnblk: cat rm Compile \
+?MAKE:o_nonblock eagain rd_nodata d_eofnblk: cat rm Compile run \
 	d_open3 h_sysfile h_fcntl signal_t hint Oldconfig Setvar \
-	startsh i_unistd i_string
+	startsh i_unistd i_string i_fcntl
 ?MAKE:	-pick add $@ %<
 ?S:o_nonblock:
 ?S:	This variable bears the symbol value to be used during open() or fcntl()
@@ -73,26 +73,31 @@
 ?H:#define RD_NODATA $rd_nodata
 ?H:#$d_eofnblk EOF_NONBLOCK
 ?H:.
-?F:!try !try.out !try.ret !try.err
+?F:!try.out !try.ret !try.err
 ?T:status
 ?LINT:use d_open3
 : check for non-blocking I/O stuff
 case "$h_sysfile" in
 true) echo "#include <sys/file.h>" > head.c;;
 *)
-	case "$h_fcntl" in
-	true) echo "#include <fcntl.h>" > head.c;;
-	*) echo "#include <sys/fcntl.h>" > head.c;;
-	esac
-	;;
+       case "$h_fcntl" in
+       true) echo "#include <fcntl.h>" > head.c;;
+       *) echo "#include <sys/fcntl.h>" > head.c;;
+       esac
+       ;;
 esac
 echo " "
 echo "Figuring out the flag used by open() for non-blocking I/O..." >&4
 case "$o_nonblock" in
 '')
 	$cat head.c > try.c
-	$cat >>try.c <<'EOCP'
+	$cat >>try.c <<EOCP
 #include <stdio.h>
+#include <stdlib.h>
+#$i_fcntl I_FCNTL
+#ifdef I_FCNTL
+#include <fcntl.h>
+#endif
 int main() {
 #ifdef O_NONBLOCK
 	printf("O_NONBLOCK\n");
@@ -103,7 +108,7 @@ int main() {
 	exit(0);
 #endif
 ?X: Stevens "Advanced Programming in the UNIX Environment" page 364 mentions
-?X: the FNDELAY symbol, used in 4.33BSD (source: Paul Marquess).
+?X: the FNDELAY symbol, used in 4.3BSD (source: Paul Marquess).
 #ifdef FNDELAY
 	printf("FNDELAY\n");
 	exit(0);
@@ -113,7 +118,7 @@ int main() {
 EOCP
 	set try
 	if eval $compile_ok; then
-		o_nonblock=`./try`
+		o_nonblock=`$run ./try`
 		case "$o_nonblock" in
 		'') echo "I can't figure it out, assuming O_NONBLOCK will do.";;
 		*) echo "Seems like we can use $o_nonblock.";;
@@ -136,6 +141,11 @@ case "$eagain" in
 #include <sys/types.h>
 #include <signal.h>
 #include <stdio.h> 
+#include <stdlib.h> 
+#$i_fcntl I_FCNTL
+#ifdef I_FCNTL
+#include <fcntl.h>
+#endif
 #define MY_O_NONBLOCK $o_nonblock
 #ifndef errno  /* XXX need better Configure test */
 extern int errno;
@@ -166,8 +176,12 @@ int main()
 		int ret;
 		close(pd[1]);	/* Parent reads from pd[0] */
 		close(pu[0]);	/* Parent writes (blocking) to pu[1] */
+#ifdef F_SETFL
 		if (-1 == fcntl(pd[0], F_SETFL, MY_O_NONBLOCK))
 			exit(1);
+#else
+		exit(4);
+#endif
 		signal(SIGALRM, blech);
 		alarm(5);
 		if ((ret = read(pd[0], buf, 1)) > 0)	/* Nothing to read! */
@@ -192,7 +206,7 @@ int main()
 		ret = read(pd[0], buf, 1);	/* Should read EOF */
 		alarm(0);
 		sprintf(string, "%d\n", ret);
-		write(3, string, strlen(string));
+		write(4, string, strlen(string));
 		exit(0);
 	}
 
@@ -207,7 +221,7 @@ EOCP
 	if eval $compile_ok; then
 ?X: Use script to avoid the possible 'alarm call' message
 		echo "$startsh" >mtry
-		echo "./try >try.out 2>try.ret 3>try.err || exit 4" >>mtry
+		echo "$run ./try >try.out 2>try.ret 4>try.err || exit 4" >>mtry
 		chmod +x mtry
 		./mtry >/dev/null 2>&1
 		case $? in
@@ -215,6 +229,7 @@ EOCP
 		1) echo "Could not perform non-blocking setting!";;
 		2) echo "I did a successful read() for something that was not there!";;
 		3) echo "Hmm... non-blocking I/O does not seem to be working!";;
+		4) echo "Could not find F_SETFL!";;
 		*) echo "Something terribly wrong happened during testing.";;
 		esac
 		rd_nodata=`$cat try.ret`

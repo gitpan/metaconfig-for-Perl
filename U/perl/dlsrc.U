@@ -18,7 +18,7 @@
 ?X:
 ?MAKE:usedl ld dlsrc cccdlflags lddlflags ccdlflags: \
 	Getfile Myread test osname sed i_dld d_dlopen Findhdr Setvar \
-	cc ccflags ldflags ls gccversion cat rsrc src
+	cc ccflags ldflags ls gccversion cat rsrc src run
 ?MAKE:	-pick add $@ %<
 ?Y:BOTTOM
 ?S:usedl:
@@ -107,7 +107,7 @@ y*) usedl="$define"
 	esac
     echo "The following dynamic loading files are available:"
 	: Can not go over to $dldir because getfile has path hard-coded in.
-	tdir=`pwd`; cd $rsrc; $ls -C $dldir/dl*.xs; cd $tdir
+	tdir=`pwd`; cd "$rsrc"; $ls -C $dldir/dl*.xs; cd "$tdir"
 	rp="Source file to use for dynamic loading"
 	fn="fne"
 	gfpth="$src"
@@ -129,13 +129,14 @@ EOM
 			hpux)	dflt='+z' ;;
 			next)	dflt='none' ;;
 			irix*)	dflt='-KPIC' ;;
-			svr4*|esix*|solaris) dflt='-KPIC' ;;
+			svr4*|esix*|solaris|nonstopux) dflt='-KPIC' ;;
 			sunos)	dflt='-pic' ;;
 			*)	dflt='none' ;;
 		    esac
 			;;
 		*)  case "$osname" in
-			svr4*|esix*|solaris) dflt='-fPIC' ;;
+	                darwin) dflt='none' ;;
+			svr4*|esix*|solaris|nonstopux) dflt='-fPIC' ;;
 			*)	dflt='-fpic' ;;
 		    esac ;;
 	    esac ;;
@@ -172,7 +173,7 @@ int main() {
 		exit(1); /* fail */
 }
 EOM
-		if $cc $ccflags try.c >/dev/null 2>&1 && ./a.out; then
+		if $cc $ccflags $ldflags try.c >/dev/null 2>&1 && $run ./a.out; then
 			cat <<EOM
 You appear to have ELF support.  I'll use $cc to build dynamic libraries.
 EOM
@@ -212,7 +213,7 @@ EOM
 			next)  dflt='none' ;;
 			solaris) dflt='-G' ;;
 			sunos) dflt='-assert nodefinitions' ;;
-			svr4*|esix*) dflt="-G $ldflags" ;;
+			svr4*|esix*|nonstopux) dflt="-G $ldflags" ;;
 	        *)     dflt='none' ;;
 			esac
 			;;
@@ -226,7 +227,7 @@ EOM
 	esac
 	for thisflag in $ldflags; do
 		case "$thisflag" in
-		-L*)
+		-L*|-R*|-Wl,-R*)
 			case " $dflt " in
 			*" $thisflag "*) ;;
 			*) dflt="$dflt $thisflag" ;;

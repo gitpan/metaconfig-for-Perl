@@ -11,7 +11,8 @@
 ?RCS: $Log: inc_version_list.U,v $
 ?RCS:
 ?MAKE:inc_version_list inc_version_list_init: cat sed Getfile perl5 \
-	version api_versionstring rm Myread archname prefix sitelib
+	version api_versionstring rm Myread archname prefix sitelib_stem \
+	exe_ext
 ?MAKE:	-pick add $@ %<
 ?Y:TOP
 ?S:inc_version_list:
@@ -50,13 +51,12 @@ $cat > getverlist <<EOPL
 use File::Basename;
 \$api_versionstring = "$api_versionstring";
 \$version = "$version";
-\$sitelib = "$sitelib";
+\$stem = "$sitelib_stem";
 \$archname = "$archname";
 EOPL
 	$cat >> getverlist <<'EOPL'
 # Can't have leading @ because metaconfig interprets it as a command!
 ;@inc_version_list=();
-$stem=dirname($sitelib);
 # XXX Redo to do opendir/readdir? 
 if (-d $stem) {
     chdir($stem);
@@ -97,19 +97,23 @@ else {
 EOPL
 chmod +x getverlist
 case "$inc_version_list" in
-'')	if test -x "$perl5"; then
+'')	if test -x "$perl5$exe_ext"; then
 		dflt=`$perl5 getverlist`
 	else
 		dflt='none'
 	fi
 	;;
 $undef) dflt='none' ;;
-*)  dflt="$inc_version_list" ;;
+?X:     Configure -Dinc_version_list='5.6.0/$archname 5.6.0' ...
+*)  eval dflt=\"$inc_version_list\" ;;
 esac
 case "$dflt" in
 ''|' ') dflt=none ;;
 esac
-$cat <<'EOM'
+case "$dflt" in
+5.005) dflt=none ;;
+esac
+$cat <<EOM
 
 In order to ease the process of upgrading, this version of perl 
 can be configured to use modules built and installed with earlier 

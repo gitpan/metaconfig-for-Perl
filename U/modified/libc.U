@@ -50,7 +50,7 @@
 ?RCS:
 ?MAKE:libc +nm_extract: echo n c rm test grep Getfile Myread Oldconfig Loc \
 	sed libs incpath libpth ar runnm nm nm_opt nm_so_opt contains xlibpth \
-	so _a _o osname trnl
+	so _a _o osname trnl tr sort uniq
 ?MAKE:	-pick add $@ %<
 ?S:libc:
 ?S:	This variable contains the location of the C library.
@@ -62,7 +62,10 @@
 ?S:.
 ?T:thislib try libnames xxx xscan xrun thisname com tans file
 ?F:!libnames
+?LINT:extern libnames
+?LINT:change libnames
 ?LINT:change nm_opt
+?INIT:libnames=''
 case "$runnm" in
 true)
 ?X: indentation is wrong on purpose--RAM
@@ -75,7 +78,6 @@ case "$libc" in
 	esac
 	;;
 esac
-libnames='';
 case "$libs" in
 '') ;;
 *)  for thislib in $libs; do
@@ -143,7 +145,7 @@ unknown)
 				s/0*\([0-9][0-9][0-9][0-9][0-9]\)/\1/g
 				G
 				s/\n/ /' | \
-			 sort | $sed -e 's/^.* //'`
+			 $sort | $sed -e 's/^.* //'`
 		eval set \$$#
 	done
 	$test -r $1 || set /usr/ccs/lib/libc.$so
@@ -210,7 +212,7 @@ compiler, or your machine supports multiple models), you can override it here.
 EOM
 else
 	dflt=''
-	echo $libpth | tr ' ' $trnl | sort | uniq > libpath
+	echo $libpth | $tr ' ' $trnl | $sort | $uniq > libpath
 	cat >&4 <<EOM
 I can't seem to find your C library.  I've looked in the following places:
 
@@ -228,7 +230,7 @@ rp='Where is your C library?'
 libc="$ans"
 
 echo " "
-echo $libc $libnames | tr ' ' $trnl | sort | uniq > libnames
+echo $libc $libnames | $tr ' ' $trnl | $sort | $uniq > libnames
 set X `cat libnames`
 shift
 xxx=files
@@ -263,7 +265,7 @@ $grep fprintf libc.tmp > libc.ptf
 ?X:	some variables that will be "eval"ed.
 ?X:
 xscan='eval "<libc.ptf $com >libc.list"; $echo $n ".$c" >&4'
-xrun='eval "<libc.tmp $com >libc.list"; echo "done" >&4'
+xrun='eval "<libc.tmp $com >libc.list"; echo "done." >&4'
 ?X: BSD-like output, I and W types added for Linux
 ?X: Some versions of Linux include a leading __IO in the symbol name.
 ?X: HPUX10 reportedly has trailing spaces, though I'm suprised it has
@@ -385,7 +387,7 @@ nm_extract="$com"
 if $test -f /lib/syscalls.exp; then
 	echo " "
 	echo "Also extracting names from /lib/syscalls.exp for good ole AIX..." >&4
-	$sed -n 's/^\([^ 	]*\)[ 	]*syscall[0-9]*$/\1/p' /lib/syscalls.exp >>libc.list
+	$sed -n 's/^\([^ 	]*\)[ 	]*syscall[0-9]*[ 	]*$/\1/p' /lib/syscalls.exp >>libc.list
 fi
 ?X: remember, indentation is wrong on purpose--RAM
 ;;

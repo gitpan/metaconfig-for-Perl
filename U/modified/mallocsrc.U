@@ -22,7 +22,7 @@
 ?MAKE:mallocsrc mallocobj usemymalloc malloctype d_mymalloc \
 	freetype: Myread \
 	Oldconfig package Guess Setvar rm cat +cc +ccflags Findhdr \
-	i_malloc i_stdlib sed libs _o
+	i_malloc i_stdlib sed libs _o ptrsize
 ?MAKE:	-pick add $@ %<
 ?X: Put near top so that other tests don't erroneously include
 ?X: -lmalloc.  --AD  22 June 1998
@@ -80,8 +80,13 @@
 : determine which malloc to compile in
 echo " "
 case "$usemymalloc" in
-''|[yY]*|true|$define)	dflt='y' ;;
-*)	dflt='n' ;;
+[yY]*|true|$define)	dflt='y' ;;
+[nN]*|false|$undef)	dflt='n' ;;
+*)	case "$ptrsize" in
+	4) dflt='y' ;;
+	*) dflt='n' ;;
+	esac
+	;;
 esac
 rp="Do you wish to attempt to use the malloc that comes with $package?"
 . ./myread

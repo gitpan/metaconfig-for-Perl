@@ -60,6 +60,7 @@
 ?H:#define MYHOSTNAME "$myhostname"		/**/
 ?H:#define MYDOMAIN "$mydomain"		/**/
 ?H:.
+?LINT:extern osname
 ?T:cont i tans tmp_re
 : now get the host name
 echo " "
@@ -115,6 +116,9 @@ if $test "$cont"; then
 		fi
 	fi
 fi
+case "$myhostname" in
+'') myhostname=noname ;;
+esac
 : you do not want to know about this
 set $myhostname
 myhostname=$1
@@ -178,18 +182,23 @@ case "$myhostname" in
 					/[	 ]$myhostname[	. ]/p" > hosts
 		}
 		tmp_re="[	. ]"
-		$test x`$awk "/[0-9].*[	 ]$myhostname$tmp_re/ { sum++ }
+		if $test -f hosts; then
+			$test x`$awk "/[0-9].*[	 ]$myhostname$tmp_re/ { sum++ }
 			     END { print sum }" hosts` = x1 || tmp_re="[	 ]"
-		dflt=.`$awk "/[0-9].*[	 ]$myhostname$tmp_re/ {for(i=2; i<=NF;i++) print \\\$i}" \
-			hosts | $sort | $uniq | \
-			$sed -n -e "s/$myhostname\.\([-a-zA-Z0-9_.]\)/\1/p"`
-		case `$echo X$dflt` in
-		X*\ *)	echo "(Several hosts in /etc/hosts matched hostname)"
+			dflt=.`$awk "/[0-9].*[	 ]$myhostname$tmp_re/ {for(i=2; i<=NF;i++) print \\\$i}" \
+				hosts | $sort | $uniq | \
+				$sed -n -e "s/$myhostname\.\([-a-zA-Z0-9_.]\)/\1/p"`
+			case `$echo X$dflt` in
+			X*\ *)	echo "(Several hosts in the database matched hostname)"
+				dflt=.
+				;;
+			X.) echo "(You do not have fully-qualified names in the hosts database)"
+				;;
+			esac
+		else
+			echo "(I cannot locate a hosts database anywhere)"
 			dflt=.
-			;;
-		X.) echo "(You do not have fully-qualified names in /etc/hosts)"
-			;;
-		esac
+		fi
 		case "$dflt" in
 		.)
 			tans=`./loc resolv.conf X /etc /usr/etc`
@@ -217,9 +226,14 @@ case "$myhostname" in
 			esac
 			;;
 		esac
+		case "$dflt$osname" in
+		.os390) echo "(Attempting domain name extraction from //'SYS1.TCPPARMS(TCPDATA)')"
+			dflt=.`awk '/^DOMAINORIGIN/ {print $2}' "//'SYS1.TCPPARMS(TCPDATA)'" 2>/dev/null`
+			;;
+		esac
 		case "$dflt" in
 		.) echo "(Lost all hope -- silly guess then)"
-			dflt='.uucp'
+			dflt='.nonet'
 			;;
 		esac
 		$rm -f hosts

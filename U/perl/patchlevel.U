@@ -17,8 +17,9 @@
 ?RCS: Baseline for dist 3.0 netwide release.
 ?RCS:
 ?MAKE:patchlevel revision version subversion \
+	perl_patchlevel version_patchlevel_string \
 	api_revision api_version api_subversion api_versionstring: \
-	package test rsrc echo n c awk osname
+	package test rsrc echo awk osname
 ?MAKE:	-pick add $@ %<
 ?S:revision:
 ?S:	The value of revision comes from the patchlevel.h file.
@@ -91,7 +92,23 @@
 ?S:	api_subversion in a format such as 5.6.1 (or 5_6_1) suitable
 ?S:	for use as a directory name.  This is filesystem dependent.
 ?S:.
-
+?S:perl_patchlevel:
+?S:	This is the Perl patch level, a numeric change identifier,
+?S:	as defined by whichever source code maintenance system
+?S:	is used to maintain the patches; currently Perforce.
+?S:	It does not correlate with the Perl version numbers or
+?S:	the maintenance versus development dichotomy except
+?S:	by also being increasing.
+?S:.
+?S:version_patchlevel_string:
+?S:	This is a string combining version, subversion and
+?S:	perl_patchlevel (if perl_patchlevel is non-zero).  
+?S:	It is typically something like 
+?S:	'version 7 subversion 1'  or
+?S:	'version 7 subversion 1 patchlevel 11224'
+?S:	It is computed here to avoid duplication of code in myconfig.SH
+?S:	and lib/Config.pm. 
+?S:.
 ?LINT:extern LC_ALL
 ?LINT:change LC_ALL
 ?LINT:extern LANGUAGE
@@ -106,6 +123,7 @@ if $test -r $rsrc/patchlevel.h;then
 	api_revision=`awk '/define[ 	]+PERL_API_REVISION/ {print $3}' $rsrc/patchlevel.h`
 	api_version=`awk '/define[ 	]+PERL_API_VERSION/ {print $3}' $rsrc/patchlevel.h`
 	api_subversion=`awk '/define[ 	]+PERL_API_SUBVERSION/ {print $3}' $rsrc/patchlevel.h`
+       perl_patchlevel=`grep ',"DEVEL[0-9][0-9]*"' $rsrc/patchlevel.h|sed 's/[^0-9]//g'`
 else
 	revision=0
 	patchlevel=0
@@ -113,11 +131,23 @@ else
 	api_revision=0
 	api_version=0
 	api_subversion=0
+	perl_patchlevel=0
+	$echo "(You do not have patchlevel.h.  Eek.)"
 fi
-$echo $n "(You have $package revision $revision" $c
-$echo $n " patchlevel $patchlevel" $c
-test 0 -eq "$subversion" || $echo $n " subversion $subversion" $c
-echo ".)"
+if $test -r $rsrc/.patch ; then  
+	if $test "`cat $rsrc/.patch`" -gt "$perl_patchlevel" ; then
+		perl_patchlevel=`cat $rsrc/.patch`
+	fi
+fi
+: Define a handy string here to avoid duplication in myconfig.SH and configpm.
+version_patchlevel_string="version $patchlevel subversion $subversion"
+case "$perl_patchlevel" in
+0|'') ;;
+*) version_patchlevel_string="$version_patchlevel_string patch $perl_patchlevel" ;;
+esac
+
+$echo "(You have $package $version_patchlevel_string.)"
+
 case "$osname" in
 dos|vms)
 	: XXX Should be a Configure test for double-dots in filenames.

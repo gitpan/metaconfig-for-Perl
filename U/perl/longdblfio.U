@@ -5,33 +5,46 @@
 ?RCS: You may distribute under the terms of either the GNU General Public
 ?RCS: License or the Artistic License, as specified in the README file.
 ?RCS:
-?MAKE:d_PRIfldbl sPRIfldbl d_PRIgldbl d_PRIFldbl sPRIGldbl d_PRIEldbl \
-	sPRIgldbl d_PRIeldbl sPRIeldbl sPRIFldbl d_PRIGldbl sPRIEldbl: \
-	d_longdbl longdblsize doublesize test cat rm Setvar Compile exe_ext
+?MAKE:d_PRIfldbl sPRIfldbl d_PRIgldbl d_PRIFUldbl sPRIGUldbl d_PRIEUldbl \
+	sPRIgldbl d_PRIeldbl sPRIeldbl sPRIFUldbl d_PRIGUldbl sPRIEUldbl \
+	d_SCNfldbl \
+	sSCNfldbl: \
+	d_longdbl longdblsize doublesize test cat rm \
+	Setvar Compile run
 ?MAKE:	-pick add $@ %<
 ?S:d_PRIfldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
 ?S:.
 ?S:d_PRIgldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
 ?S:.
 ?S:d_PRIeldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
 ?S:.
-?S:d_PRIFldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:d_PRIFUldbl:
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
+?S:	The 'U' in the name is to separate this from d_PRIfldbl so that even
+?S:	case-blind systems can see the difference.
 ?S:.
-?S:d_PRIGldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:d_PRIGUldbl:
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
+?S:	The 'U' in the name is to separate this from d_PRIgldbl so that even
+?S:	case-blind systems can see the difference.
 ?S:.
-?S:d_PRIEldbl:
-?S:	This variable conditionally defines the PERL_PRIfldlbl symbol, which
+?S:d_PRIEUldbl:
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
 ?S:	indiciates that stdio has a symbol to print long doubles.
+?S:	The 'U' in the name is to separate this from d_PRIeldbl so that even
+?S:	case-blind systems can see the difference.
+?S:.
+?S:d_SCNfldbl:
+?S:	This variable conditionally defines the PERL_PRIfldbl symbol, which
+?S:	indiciates that stdio has a symbol to scan long doubles.
 ?S:.
 ?S:sPRIfldbl:
 ?S:	This variable, if defined, contains the string used by stdio to
@@ -45,17 +58,27 @@
 ?S:	This variable, if defined, contains the string used by stdio to
 ?S:	format long doubles (format 'e') for output.
 ?S:.
-?S:sPRIFldbl:
+?S:sPRIFUldbl:
 ?S:	This variable, if defined, contains the string used by stdio to
 ?S:	format long doubles (format 'F') for output.
+?S:	The 'U' in the name is to separate this from sPRIfldbl so that even
+?S:	case-blind systems can see the difference.
 ?S:.
-?S:sPRIGldbl:
+?S:sPRIGUldbl:
 ?S:	This variable, if defined, contains the string used by stdio to
 ?S:	format long doubles (format 'G') for output.
+?S:	The 'U' in the name is to separate this from sPRIgldbl so that even
+?S:	case-blind systems can see the difference.
 ?S:.
-?S:sPRIEldbl:
+?S:sPRIEUldbl:
 ?S:	This variable, if defined, contains the string used by stdio to
 ?S:	format long doubles (format 'E') for output.
+?S:	The 'U' in the name is to separate this from sPRIeldbl so that even
+?S:	case-blind systems can see the difference.
+?S:.
+?S:sSCNfldbl:
+?S:	This variable, if defined, contains the string used by stdio to
+?S:	format long doubles (format 'f') for input.
 ?S:.
 ?C:PERL_PRIfldbl:
 ?C:	This symbol, if defined, contains the string used by stdio to
@@ -81,14 +104,18 @@
 ?C:	This symbol, if defined, contains the string used by stdio to
 ?C:	format long doubles (format 'e') for output.
 ?C:.
+?C:PERL_SCNfldbl:
+?C:	This symbol, if defined, contains the string used by stdio to
+?C:	format long doubles (format 'f') for input.
+?C:.
 ?H:#$d_PRIfldbl PERL_PRIfldbl	$sPRIfldbl	/**/
 ?H:#$d_PRIgldbl PERL_PRIgldbl	$sPRIgldbl	/**/
 ?H:#$d_PRIeldbl PERL_PRIeldbl	$sPRIeldbl	/**/
-?H:#$d_PRIFldbl PERL_PRIFldbl	$sPRIFldbl	/**/
-?H:#$d_PRIGldbl PERL_PRIGldbl	$sPRIGldbl	/**/
-?H:#$d_PRIEldbl PERL_PRIEldbl	$sPRIEldbl	/**/
+?H:#$d_PRIFUldbl PERL_PRIFldbl	$sPRIFUldbl	/**/
+?H:#$d_PRIGUldbl PERL_PRIGldbl	$sPRIGUldbl	/**/
+?H:#$d_PRIEUldbl PERL_PRIEldbl	$sPRIEUldbl	/**/
+?H:#$d_SCNfldbl PERL_SCNfldbl	$sSCNfldbl	/**/
 ?H:.
-?F:!try
 ?T:yyy
 echo " "
 
@@ -107,34 +134,12 @@ int main() {
 EOCP
 	set try
 	if eval $compile; then
-		yyy=`./try$exe_ext`
+		yyy=`$run ./try`
 		case "$yyy" in
 		123.456)
 			sPRIfldbl='"f"'; sPRIgldbl='"g"'; sPRIeldbl='"e"';
-                	sPRIFldbl='"F"'; sPRIGldbl='"G"'; sPRIEldbl='"E"';
+                	sPRIFUldbl='"F"'; sPRIGUldbl='"G"'; sPRIEUldbl='"E"';
 			echo "We will use %f."
-			;;
-		esac
-	fi
-fi
-
-if $test X"$sPRIfldbl" = X; then
-	$cat >try.c <<'EOCP'
-#include <sys/types.h>
-#include <stdio.h>
-int main() {
-  long double d = 123.456;
-  printf("%.3llf\n", d);
-}
-EOCP
-	set try
-	if eval $compile; then
-		yyy=`./try$exe_ext`
-		case "$yyy" in
-		123.456)
-			sPRIfldbl='"llf"'; sPRIgldbl='"llg"'; sPRIeldbl='"lle"';
-                	sPRIFldbl='"llF"'; sPRIGldbl='"llG"'; sPRIEldbl='"llE"';
-			echo "We will use %llf."
 			;;
 		esac
 	fi
@@ -151,12 +156,34 @@ int main() {
 EOCP
 	set try
 	if eval $compile; then
-		yyy=`./try$exe_ext`
+		yyy=`$run ./try`
 		case "$yyy" in
 		123.456)
 			sPRIfldbl='"Lf"'; sPRIgldbl='"Lg"'; sPRIeldbl='"Le"';
-                	sPRIFldbl='"LF"'; sPRIGldbl='"LG"'; sPRIEldbl='"LE"';
+                	sPRIFUldbl='"LF"'; sPRIGUldbl='"LG"'; sPRIEUldbl='"LE"';
 			echo "We will use %Lf."
+			;;
+		esac
+	fi
+fi
+
+if $test X"$sPRIfldbl" = X; then
+	$cat >try.c <<'EOCP'
+#include <sys/types.h>
+#include <stdio.h>
+int main() {
+  long double d = 123.456;
+  printf("%.3llf\n", d);
+}
+EOCP
+	set try
+	if eval $compile; then
+		yyy=`$run ./try`
+		case "$yyy" in
+		123.456)
+			sPRIfldbl='"llf"'; sPRIgldbl='"llg"'; sPRIeldbl='"lle"';
+                	sPRIFUldbl='"llF"'; sPRIGUldbl='"llG"'; sPRIEUldbl='"llE"';
+			echo "We will use %llf."
 			;;
 		esac
 	fi
@@ -173,11 +200,11 @@ int main() {
 EOCP
 	set try
 	if eval $compile; then
-		yyy=`./try$exe_ext`
+		yyy=`$run ./try`
 		case "$yyy" in
 		123.456)
 			sPRIfldbl='"lf"'; sPRIgldbl='"lg"'; sPRIeldbl='"le"';
-                	sPRIFldbl='"lF"'; sPRIGldbl='"lG"'; sPRIEldbl='"lE"';
+                	sPRIFUldbl='"lF"'; sPRIGUldbl='"lG"'; sPRIEUldbl='"lE"';
 			echo "We will use %lf."
 			;;
 		esac
@@ -186,6 +213,8 @@ fi
 
 if $test X"$sPRIfldbl" = X; then
 	echo "Cannot figure out how to print long doubles." >&4
+else
+	sSCNfldbl=$sPRIfldbl	# expect consistency
 fi
 
 $rm -f try try.*
@@ -194,10 +223,12 @@ fi # d_longdbl
 
 case "$sPRIfldbl" in
 '')	d_PRIfldbl="$undef"; d_PRIgldbl="$undef"; d_PRIeldbl="$undef"; 
-	d_PRIFldbl="$undef"; d_PRIGldbl="$undef"; d_PRIEldbl="$undef"; 
+	d_PRIFUldbl="$undef"; d_PRIGUldbl="$undef"; d_PRIEUldbl="$undef"; 
+	d_SCNfldbl="$undef";
 	;;
 *)	d_PRIfldbl="$define"; d_PRIgldbl="$define"; d_PRIeldbl="$define"; 
-	d_PRIFldbl="$define"; d_PRIGldbl="$define"; d_PRIEldbl="$define"; 
+	d_PRIFUldbl="$define"; d_PRIGUldbl="$define"; d_PRIEUldbl="$define"; 
+	d_SCNfldbl="$define";
 	;;
 esac
 

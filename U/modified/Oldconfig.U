@@ -58,6 +58,7 @@
 ?X: for the sake of setting defaults.
 ?X:
 ?MAKE:Oldconfig hint myuname osname osvers: Instruct Myread uname \
+	Checkcc Mksymlinks run \
 	sh awk sed test cat rm lns tr n c contains Loc Options Tr src trnl ln
 ?MAKE:	-pick wipe $@ %<
 ?S:myuname:
@@ -90,7 +91,13 @@
 ?C:	by Configure.  You shouldn't rely on it too much; the specific
 ?C:	feature tests from Configure are generally more reliable.
 ?C:.
+?C:OSVERS:
+?C:	This symbol contains the version of the operating system, as determined
+?C:	by Configure.  You shouldn't rely on it too much; the specific
+?C:	feature tests from Configure are generally more reliable.
+?C:.
 ?H:#define OSNAME "$osname"		/**/
+?H:#define OSVERS "$osvers"		/**/
 ?H:.
 ?F:!config.sh
 ?T:tmp tmp_n tmp_c tmp_sh file
@@ -98,6 +105,10 @@
 ?T:tans _ isesix INITPROG DJGPP
 ?D:osname=''
 ?LINT:change n c sh
+?LINT:extern targetarch
+?LINT:extern hostarch
+?LINT:change hostarch
+?LINT:use run
 : Try to determine whether config.sh was made on this system
 case "$config_sh" in
 '')
@@ -147,7 +158,10 @@ if test -f config.sh; then
 	rp="I see a config.sh file.  Shall I use it to set the defaults?"
 	. UU/myread
 	case "$ans" in
-	n*|N*) echo "OK, I'll ignore it."; mv config.sh config.sh.old;;
+	n*|N*) echo "OK, I'll ignore it."
+		mv config.sh config.sh.old
+		myuname="$newmyuname"
+		;;
 	*)  echo "Fetching default answers from your old config.sh file..." >&4
 		tmp_n="$n"
 		tmp_c="$c"
@@ -165,6 +179,7 @@ if test -f config.sh; then
 		;;
 	esac
 fi
+. ./UU/checkcc
 if test ! -f config.sh; then
 	$cat <<EOM
 
@@ -191,6 +206,7 @@ EOM
 	$test -d /usr/apollo/bin && osname=apollo
 	$test -f /etc/saf/_sactab && osname=svr4
 	$test -d /usr/include/minix && osname=minix
+	$test -f /system/gnu_library/bin/ar.pm && osname=vos
 	if $test -d /MachTen -o -d /MachTen_Folder; then
 ?X:		MachTen uname -a output looks like
 ?X:		xxx 4 0.0 Macintosh
@@ -341,6 +357,10 @@ EOM
 			esac
 			;;
 		next*) osname=next ;;
+		nonstop-ux) osname=nonstopux ;;
+		openbsd) osname=openbsd
+                	osvers="$3"
+                	;;
 		POSIX-BC | posix-bc ) osname=posix-bc
 			osvers="$3"
 			;;
@@ -381,7 +401,12 @@ EOM
 ?X: DEC OSF/1 myuname -a output looks like:  osf1 xxxx t3.2 123.4 alpha
 ?X: where the version number can be something like [xvt]n.n
 					osname=dec_osf
-					osvers=`echo "$3" | sed 's/^[xvt]//'`
+?X: sizer knows the minor minor version: the letter
+					osvers=`sizer -v | awk '{print $3}' |  tr '[A-Z]' '[a-z]' | sed 's/^[xvt]//'`
+					case "$osvers" in
+					[1-9].[0-9]*) ;;
+					*) osvers=`echo "$3" | sed 's/^[xvt]//'` ;;
+					esac
 					;;
 			hp*)	osname=hp_osf1	;;
 			mips)	osname=mips_osf1 ;;
@@ -391,8 +416,10 @@ EOM
 		unixware) osname=svr5
 			osvers="$4"
 			;;
-		uts) osname=uts
+		uts)	osname=uts
 			osvers="$3"
+			;;
+		vos) osvers="$3"
 			;;
 		$2) case "$osname" in
 			*isc*) ;;
@@ -465,6 +492,14 @@ EOM
 		fi
 	fi
 	
+        case "$targetarch" in
+        '') ;;
+        *)  hostarch=$osname
+            osname=`echo $targetarch|sed 's,^[^-]*-,,'`
+            osvers=''
+            ;;
+        esac
+
 	: Now look for a hint file osname_osvers, unless one has been
 	: specified already.
 	case "$hintfile" in
@@ -539,7 +574,7 @@ EOM
 		elif $test -f $src/hints/$file.sh; then
 			. $src/hints/$file.sh
 			$cat $src/hints/$file.sh >> UU/config.sh
-		elif $test X$tans = X -o X$tans = Xnone ; then
+		elif $test X"$tans" = X -o X"$tans" = Xnone ; then
 			: nothing
 		else
 			: Give one chance to correct a possible typo.
@@ -612,7 +647,6 @@ fi
 	;;
 esac
 test "$override" && . ./optdef.sh
-myuname="$newmyuname"
 
 : Restore computed paths
 for file in $loclist $trylist; do

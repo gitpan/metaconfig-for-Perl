@@ -7,8 +7,8 @@
 ?RCS:
 ?RCS: $Log: usethreads.U,v $
 ?RCS:
-?MAKE:usethreads useithreads use5005threads d_oldpthreads: \
-	Myread Oldconfig Setvar test cat
+?MAKE:usethreads useithreads use5005threads d_oldpthreads usereentrant: \
+	Myread Oldconfig Setvar test cat useperlio
 ?MAKE:	-pick add $@ %<
 ?Y:TOP
 ?S:usethreads:
@@ -34,6 +34,13 @@
 ?S:	draft POSIX threads API.  This is only potentially meaningful if
 ?S:	usethreads is set.
 ?S:.
+?S:usereentrant:
+?S:	This variable conditionally defines the USE_REENTRANT_API symbol,
+?S:	which indicates that the thread code may try to use the various
+?S:	_r versions of library functions.  This is only potentially
+?S:	meaningful if usethreads is set and is very experimental, it is
+?S:	not even prompted for.
+?S:.
 ?C:USE_ITHREADS:
 ?C:	This symbol, if defined, indicates that Perl should be built to
 ?C:	use the interpreter-based threading implementation.
@@ -52,32 +59,49 @@
 ?C:	This symbol, if defined, indicates that Perl should
 ?C:	be built to use the old draft POSIX threads API.
 ?C:.
+?C:USE_REENTRANT_API:
+?C:	This symbol, if defined, indicates that Perl should
+?C:	try to use the various _r versions of library functions.
+?C:	This is extremely experimental.
+?C:.
 ?H:#$use5005threads	USE_5005THREADS		/**/
 ?H:#$useithreads	USE_ITHREADS		/**/
 ?H:?%<:#if defined(USE_5005THREADS) && !defined(USE_ITHREADS)
 ?H:?%<:#define		USE_THREADS		/* until src is revised*/
 ?H:?%<:#endif
 ?H:#$d_oldpthreads	OLD_PTHREADS_API		/**/
+?H:#$usereentrant	USE_REENTRANT_API	/**/
 ?H:.
-?LINT:set usethreads useithreads use5005threads d_oldpthreads
+?LINT:set usethreads useithreads use5005threads d_oldpthreads usereentrant
 ?INIT:: set usethreads on the Configure command line to enable threads.
+?INIT:usereentrant='undef'
 ?F:!usethreads.cbu
 ?X: We should really have some explanatory text here, and some
 ?X: automatic setting of sensible defaults.
 case "$usethreads" in
 $define|true|[yY]*)     dflt='y';;
-*) dflt='n';;
+*)     # Catch case where user specified ithreads or 5005threads but
+       # forgot -Dusethreads (A.D. 4/2002)
+       case "$useithreads$use5005threads" in
+       *$define*)      
+		case "$useperlio" in
+		"$define")	dflt='y' ;;
+		*)		dflt='n' ;;
+		esac
+		;;
+       *)	dflt='n';;
+       esac
+       ;;
 esac
 cat <<EOM
 
 Perl can be built to take advantage of threads on some systems.
 To do so, Configure can be run with -Dusethreads.
 
-Note that threading is a highly experimental feature, and
-some known race conditions still remain.  If you choose to try
-it, be very sure to not actually deploy it for production
-purposes.  README.threads has more details, and is required
-reading if you enable threads.
+Note that Perl built with threading support runs slightly slower
+and uses more memory than plain Perl. The current implementation
+is believed to be stable, but it is fairly new, and so should be
+treated with caution.
 
 If this doesn't make any sense to you, just accept the default '$dflt'.
 EOM
@@ -94,15 +118,14 @@ case "$usethreads" in
 $define)
 	$cat <<EOM
 
-As of 5.5.640, Perl has two different internal threading implementations,
-the 5.005 version (5005threads) and an interpreter-based version
-(ithreads) that has one interpreter per thread.  Both are very 
-experimental.  This arrangement exists to help developers work out
-which one is better.
+Since release 5.6, Perl has had two different threading implementations,
+the newer interpreter-based version (ithreads) with one interpreter per
+thread, and the older 5.005 version (5005threads).
+The 5005threads version is effectively unmaintained and will probably be
+removed in Perl 5.10, so there should be no need to build a Perl using it
+unless needed for backwards compatibility with some existing 5.005threads
+code.
 
-If you're a casual user, you probably don't want interpreter-threads
-at this time.  There doesn't yet exist a way to create threads from
-within Perl in this model, i.e., "use Thread;" will NOT work.
 EOM
 	: Default to ithreads unless overridden on command line or with
 	: old config.sh
@@ -113,7 +136,7 @@ EOM
 	case "$useithreads" in
 		$undef|false|[nN]*) dflt='n';;
 	esac
-	rp='Use interpreter-based ithreads?'
+	rp='Use the newer interpreter-based ithreads?'
 	. ./myread
 	case "$ans" in
 	y|Y)    val="$define" ;;
@@ -134,6 +157,30 @@ EOM
 	use5005threads="$undef"
 	;;
 esac
+
+?X: This is not supposed to be possible but with some trickery, maybe.
+case "$useithreads$use5005threads" in
+"$define$define")
+	$cat >&4 <<EOM
+
+You cannot have both the ithreads and the 5.005 threads enabled
+at the same time.  Disabling the 5.005 threads since they are
+much less stable than the ithreads.
+
+EOM
+	use5005threads="$undef"
+	;;
+esac
+
+if test X"$usethreads" = "X$define" -a "X$useperlio" = "Xundef"; then
+	cat >&4 <<EOF
+***
+*** To build with ithreads you must also use the PerlIO layer.
+*** Cannot continue, aborting.
+***
+EOF
+	exit 1
+fi
 
 ?X: Check out what kind of threads api we have
 case "$d_oldpthreads" in

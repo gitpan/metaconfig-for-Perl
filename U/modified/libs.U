@@ -34,11 +34,11 @@
 ?RCS:
 ?MAKE:libs ignore_versioned_solibs libsfound libsfiles libsdirs libspath: \
 	test cat Myread Oldconfig Loc libpth package xlibpth so _a \
-	usesocks ccflags sed
+	usesocks sed
 ?MAKE:	-pick add $@ %<
 ?S:libs:
 ?S:	This variable holds the additional libraries we want to use.
-?S:	It is up to the Makefile to deal with it.
+?S:	It is up to the Makefile to deal with it.  The list can be empty.
 ?S:.
 ?S:libsfound:
 ?S:	This variable holds the full pathnames of the libraries
@@ -82,7 +82,7 @@
 ?X:: default ordered library list
 ?X:libswanted='net socket inet bind nsl nm sdbm gdbm ndbm dbm malloc dl'
 ?X:libswanted="$libswanted dld sun m c_s c posix cposix ndir dir ucb"
-?X:libswanted="$libswanted bsd BSD PW x iconv"
+?X:libswanted="$libswanted bsd BSD PW x"
 ?X:
 ?INIT:: default library list
 ?INIT:libswanted=''
@@ -90,6 +90,7 @@
 ?INIT:ignore_versioned_solibs=''
 ?LINT:extern libscheck
 ?LINT:use libscheck
+?LINT:extern p
 : Looking for optional libraries
 echo " "
 echo "Checking for optional libraries..." >&4
@@ -100,7 +101,8 @@ esac
 case "$libswanted" in
 '') libswanted='c_s';;
 esac
-?X: libsocks has nasty naming.
+?X: libsocks has nasty naming scheme.
+?X: This does not work if somebody wants SOCKS 4. 
 case "$usesocks" in
 "$define") libswanted="$libswanted socks5 socks5_sh" ;;
 esac
@@ -115,7 +117,7 @@ for thislib in $libswanted; do
 	for thisdir in $libspath; do
 	    xxx=''
 	    if $test ! -f "$xxx" -a "X$ignore_versioned_solibs" = "X"; then
-		xxx=`ls $thisdir/lib$thislib.$so.[0-9] 2>/dev/null|tail -1`
+		xxx=`ls $thisdir/lib$thislib.$so.[0-9] 2>/dev/null|sed -n '$p'`
 	        $test -f "$xxx" && eval $libscheck
 		$test -f "$xxx" && libstyle=shared
 	    fi

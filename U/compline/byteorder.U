@@ -18,18 +18,18 @@
 ?RCS: Revision 3.0  1993/08/18  12:05:28  ram
 ?RCS: Baseline for dist 3.0 netwide release.
 ?RCS:
-?MAKE:byteorder: cat Myread Oldconfig Loc Compile rm \
-	longsize crosscompile multiarch
+?MAKE:byteorder: cat Myread Oldconfig Loc Compile rm run \
+	usecrosscompile multiarch uvtype uvsize
 ?MAKE:	-pick add $@ %<
 ?S:byteorder:
-?S:	This variable holds the byte order. In the following, larger digits
-?S:	indicate more significance.  The variable byteorder is either 4321
-?S:	on a big-endian machine, or 1234 on a little-endian, or 87654321
-?S:	on a Cray ... or 3412 with weird order !
+?S:	This variable holds the byte order in a UV. In the following,
+?S:	larger digits indicate more significance.  The variable byteorder
+?S:	is either 4321 on a big-endian machine, or 1234 on a little-endian,
+?S:	or 87654321 on a Cray ... or 3412 with weird order !
 ?S:.
 ?C:BYTEORDER:
 ?C:	This symbol holds the hexadecimal constant defined in byteorder,
-?C:	i.e. 0x1234 or 0x4321, etc...
+?C:	in a UV, i.e. 0x1234 or 0x4321 or 0x12345678, etc...
 ?C:	If the compiler supports cross-compiling or multiple-architecture
 ?C:	binaries (eg. on NeXT systems), use compiler-defined macros to
 ?C:	determine the byte order.
@@ -43,7 +43,7 @@
 ?C:	so the default case (for NeXT) is big endian to catch them. 
 ?C:	This might matter for NeXT 3.0.
 ?C:.
-?H:?%<:#if defined(CROSSCOMPILE) || defined(MULTIARCH)
+?H:?%<:#if defined(USE_CROSS_COMPILE) || defined(MULTIARCH)
 ?H:?%<:#  ifdef __LITTLE_ENDIAN__
 ?H:?%<:#    if LONGSIZE == 4
 ?H:?%<:#      define BYTEORDER 0x1234
@@ -70,19 +70,17 @@
 ?H:?%<:#define BYTEORDER 0x$byteorder	/* large digits for MSB */
 ?H:?%<:#endif /* NeXT */
 ?H:.
-?F:!try
 ?T:xxx_prompt
-?LINT:use longsize
-: check for ordering of bytes in a long
+: check for ordering of bytes in a UV
 echo " "
-case "$crosscompile$multiarch" in
+case "$usecrosscompile$multiarch" in
 *$define*)
 	$cat <<EOM
 You seem to be either cross-compiling or doing a multiarchitecture build,
 skipping the byteorder check.
 
 EOM
-	byteorder='0xffff'
+	byteorder='ffff'
 	;;
 *)
 	case "$byteorder" in
@@ -96,21 +94,23 @@ an Alpha will report 12345678. If the test program works the default is
 probably right.
 I'm now running the test program...
 EOM
-		$cat >try.c <<'EOCP'
+		$cat >try.c <<EOCP
 #include <stdio.h>
+#include <sys/types.h>
+typedef $uvtype UV;
 int main()
 {
 	int i;
 	union {
-		unsigned long l;
-		char c[sizeof(long)];
+		UV l;
+		char c[$uvsize];
 	} u;
 
-	if (sizeof(long) > 4)
-		u.l = (0x08070605L << 32) | 0x04030201L;
+	if ($uvsize > 4)
+		u.l = (((UV)0x08070605) << 32) | (UV)0x04030201;
 	else
-		u.l = 0x04030201L;
-	for (i = 0; i < sizeof(long); i++)
+		u.l = (UV)0x04030201;
+	for (i = 0; i < $uvsize; i++)
 		printf("%c", u.c[i]+'0');
 	printf("\n");
 	exit(0);
@@ -119,7 +119,7 @@ EOCP
 		xxx_prompt=y
 		set try
 		if eval $compile && ./try > /dev/null; then
-			dflt=`./try`
+			dflt=`$run ./try`
 			case "$dflt" in
 			[1-4][1-4][1-4][1-4]|12345678|87654321)
 				echo "(The test program ran ok.)"
@@ -137,7 +137,7 @@ EOM
 		fi
 		case "$xxx_prompt" in
 		y)
-			rp="What is the order of bytes in a long?"
+			rp="What is the order of bytes in $uvtype?"
 			. ./myread
 			byteorder="$ans"
 			;;

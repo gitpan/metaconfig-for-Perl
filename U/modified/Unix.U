@@ -23,10 +23,12 @@
 ?MAKE:	-pick add $@ %<
 ?S:_exe:
 ?S:	This variable defines the extension used for executable files.
-?S:	For unix it is empty.  Other possible values include '.exe'.
+?S:	DJGPP, Cygwin and OS/2 use '.exe'.  Stratus VOS uses '.pm'.
+?S:	On operating systems which do not require a specific extension
+?S:	for executable files, this variable is empty.
 ?S:.
 ?S:_a:
-?S:	This variable defines the extension used for ordinary libraries.
+?S:	This variable defines the extension used for ordinary library files.
 ?S:	For unix, it is '.a'.  The '.' is included.  Other possible
 ?S:	values include '.lib'.
 ?S:.
@@ -70,7 +72,6 @@
 ?S:.
 ?LINT: change _a _exe _o p_
 ?INIT:: Trailing extension.  Override this in a hint file, if needed.
-?INIT:_exe=''
 ?INIT:: Extra object files, if any, needed on this platform.
 ?INIT:archobjs=''
 : Define several unixisms.
@@ -79,7 +80,7 @@
 : or the new name.
 case "$_exe" in
 '')	case "$exe_ext" in
-    '')	;;
+	'')	;;
 	*)	_exe="$exe_ext" ;;
 	esac
 	;;

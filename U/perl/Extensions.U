@@ -10,7 +10,8 @@
 ?MAKE:known_extensions extensions dynamic_ext static_ext nonxs_ext \
 	useposix useopcode : \
 	Myread hint usedl d_sem d_socket i_db i_dbm i_rpcsvcdbm i_gdbm \ 
-	i_ndbm usethreads package test cat rsrc d_msg d_shm osname use64bitint \
+	i_ndbm usethreads useithreads package test cat rsrc \
+	d_msg d_shm osname use64bitint i_langinfo d_nl_langinfo \
 	libs
 ?MAKE:	-pick add $@ %<
 ?Y:BOTTOM
@@ -80,7 +81,7 @@ find_extensions='
            else
                if $test -d $xxx -a $# -lt 10; then
                    set $1$xxx/ $*;
-                   cd $xxx;
+                   cd "$xxx";
                    eval $find_extensions;
                    cd ..;
                    shift;
@@ -90,17 +91,21 @@ find_extensions='
        esac;
     done'
 tdir=`pwd`
-cd $rsrc/ext
+cd "$rsrc/ext"
 set X
 shift
 eval $find_extensions
+# Special case:  Add in threads/shared since it is not picked up by the
+# recursive find above (and adding in general recursive finding breaks
+# SDBM_File/sdbm).  A.D.  10/25/2001.
+known_extensions="$known_extensions threads/shared"
 set X $nonxs_extensions
 shift
 nonxs_extensions="$*"
 set X $known_extensions
 shift
 known_extensions="$*"
-cd $tdir
+cd "$tdir"
 
 : Now see which are supported on this system.
 ?X: avail_ext lists available XS extensions.
@@ -116,6 +121,11 @@ for xxx in $known_extensions ; do
 	GDBM_File|gdbm_fil)
 		case "$i_gdbm" in 
 		$define) avail_ext="$avail_ext $xxx" ;;
+		esac
+		;;
+	I18N/Langinfo|i18n_lan)
+		case "$i_langinfo$d_nl_langinfo" in 
+		$define$define) avail_ext="$avail_ext $xxx" ;;
 		esac
 		;;
 	NDBM_File|ndbm_fil)
@@ -158,13 +168,54 @@ for xxx in $known_extensions ; do
 		;;
 	Socket|socket)
 		case "$d_socket" in 
+		true|$define|y)
+		    case "$osname" in
+		    beos) ;; # not unless BONE
+		    *) avail_ext="$avail_ext $xxx" ;;
+		    esac
+		    ;;
+		esac
+		;;
+	Sys/Syslog|sys/syslog)
+		: XXX syslog requires socket
+		case "$d_socket" in 
 		true|$define|y) avail_ext="$avail_ext $xxx" ;;
 		esac
 		;;
 	Thread|thread)
-		case "$usethreads" in 
-		true|$define|y) avail_ext="$avail_ext $xxx" ;;
+                case "$usethreads" in
+                true|$define|y)
+                        case "$useithreads" in
+                        $undef|false|[nN]*) avail_ext="$avail_ext $xxx" ;;
+                        esac
 		esac
+		;;
+	XS/APItest|xs/apitest)
+		# This is just for testing.  Skip it unless we have dynamic loading.
+
+		case "$usedl" in
+		$define) avail_ext="$avail_ext $xxx" ;;
+		esac
+		;;
+	XS/Typemap|xs/typemap)
+		# This is just for testing.  Skip it unless we have dynamic loading.
+		case "$usedl" in
+		$define) avail_ext="$avail_ext $xxx" ;;
+		esac
+		;;
+	threads|threads/shared)
+		# threads and threads::shared are special cases.
+		# To stop people from asking "Perl 5.8.0 was supposed
+		# to have this new fancy threads implementation but my
+		# perl doesn't have it" and from people trying to
+		# (re)install the threads module using CPAN.pm and
+		# CPAN.pm then offering to reinstall Perl 5.8.0,
+		# the threads.pm and threads/shared.pm will always be
+		# there, croaking informatively ("you need to rebuild
+		# all of Perl with threads, sorry") when threads haven't
+		# been compiled in.
+		# --jhi
+		avail_ext="$avail_ext $xxx"
 		;;
 	IPC/SysV|ipc/sysv)
 		: XXX Do we need a useipcsysv variable here
@@ -303,6 +354,20 @@ EOM
 	none) static_ext=' ' ;;
 	*) static_ext="$ans" ;;
 	esac
+	;;
+esac
+#        
+# Encode is a special case.  If we are building Encode as a static
+# extension, we need to explicitly list its subextensions as well.
+# For other nested extensions, this is handled automatically by
+# the appropriate Makefile.PL.
+case " $static_ext " in
+	*" Encode "*) # Add the subextensions of Encode
+	cd "$rsrc/ext"
+	for xxx in `ls Encode/*/Makefile.PL|awk -F/ '{print $2}'`; do
+		static_ext="$static_ext Encode/$xxx"
+	done
+	cd "$tdir"
 	;;
 esac
 

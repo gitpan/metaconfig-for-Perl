@@ -6,7 +6,7 @@
 ?RCS: License or the Artistic License, as specified in the README file.
 ?RCS:
 ?MAKE:use64bitint use64bitall archname64: Myread Oldconfig Setvar test \
-	uselargefiles usemorebits longsize ccflags
+	usemorebits longsize ccflags d_quad
 ?MAKE:	-pick add $@ %<
 ?Y:TOP
 ?S:use64bitint:
@@ -56,10 +56,10 @@
 ?H:?%<:#$use64bitall	USE_64_BIT_ALL		/**/
 ?H:?%<:#endif
 ?H:.
+?INIT:archname64=''
 ?LINT:set use64bitint
 ?LINT:extern ccflags
 ?LINT:change ccflags
-?LINT:use uselargefiles
 ?LINT:use usemorebits
 ?LINT:extern use64bits
 ?LINT:use use64bits
@@ -150,6 +150,10 @@ EOM
    "$define"|true|[yY]*) dflt='y';;
    *) dflt='n';;
    esac
+   case "$d_quad" in
+   "$define") ;;
+   *) dflt='n' ;;
+   esac
    cat <<EOM
 
 Perl can be built to take advantage of 64-bit integer types
@@ -157,6 +161,7 @@ on some systems.  To do so, Configure can be run with -Duse64bitint.
 Choosing this option will most probably introduce binary incompatibilities.
 
 If this doesn't make any sense to you, just accept the default '$dflt'.
+(The default has been chosen based on your configuration.)
 EOM
    rp='Try to use 64-bit integers, if available?'
    . ./myread
@@ -185,6 +190,7 @@ binary incompatibilities.  On the other hand, your platform may not
 have any more 64-bitness available than what you already have chosen.
 
 If this doesn't make any sense to you, just accept the default '$dflt'.
+(The default has been chosen based on your configuration.)
 EOM
 rp='Try to use maximal 64-bit support, if available?'
 . ./myread

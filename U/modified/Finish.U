@@ -39,11 +39,12 @@
 	test package make
 ?MAKE:	-pick add $@ %<
 ?F:!config.sh
+?T:pwd
 : Finish up by extracting the .SH files
 case "$alldone" in
 exit)
 	$rm -rf UU
-	echo "Done."
+	echo "Extraction done."
 	exit 0
 	;;
 cont)
@@ -78,7 +79,9 @@ esac
 ?X:
 echo " "
 exec 1>&4
+pwd=`pwd`
 . ./UU/extract
+cd "$pwd"
 
 if $contains '^depend:' [Mm]akefile >/dev/null 2>&1; then
 	dflt=y
@@ -98,7 +101,7 @@ EOM
 	. UU/myread
 	case "$ans" in
 	y*)
-		$make depend && echo "Now you must run a $make."
+		$make depend && echo "Now you must run '$make'."
 		;;
 	*)
 		echo "You must run '$make depend' then '$make'."
@@ -108,7 +111,7 @@ elif test -f [Mm]akefile; then
 	echo " "
 	echo "Now you must run a $make."
 else
-	echo "Done."
+	echo "Configure done."
 fi
 
 if $test -f Policy.sh; then

@@ -34,7 +34,8 @@
 ?X: is.  The information it collects here is used primarily to establish default
 ?X: answers to other questions.
 ?X: 
-?MAKE:Guess d_eunice d_xenix d_bsd: cat test echo n c contains rm Loc eunicefix
+?MAKE:Guess d_eunice d_xenix d_bsd: cat test echo n c contains \
+	rm Loc eunicefix tr
 ?MAKE:	-pick add $@ %<
 ?S:d_eunice:
 ?S:	This variable conditionally defines the symbols EUNICE and VAX, which
@@ -100,7 +101,7 @@ if test -f /osf_boot || $contains 'OSF/1' /usr/include/ctype.h >/dev/null 2>&1
 then
 	echo "Looks kind of like an OSF/1 system, but we'll see..."
 	echo exit 0 >osf1
-elif test `echo abc | tr a-z A-Z` = Abc ; then
+elif test `echo abc | $tr a-z A-Z` = Abc ; then
 	xxx=`./loc addbib blurfl $pth`
 	if $test -f $xxx; then
 	echo "Looks kind of like a USG system with BSD features, but we'll see..."
@@ -139,12 +140,15 @@ EOI
 	;;
 esac
 : Detect OS2.  The p_ variable is set above in the Head.U unit.
+: Note that this also -- wrongly -- detects e.g. dos-djgpp, which also uses
+: semicolon as a patch separator
 case "$p_" in
 :) ;;
 *)
 	$cat <<'EOI'
 I have the feeling something is not exactly right, however...don't tell me...
 lemme think...does HAL ring a bell?...no, of course, you're only running OS/2!
+(Or you may be running DOS with DJGPP.)
 EOI
 	echo exit 0 >os2
 	;;

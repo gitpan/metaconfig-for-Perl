@@ -25,13 +25,20 @@
 ?X:
 ?X: The purpose of this unit is to locate perl good enough to construct a #!
 ?X:
-?MAKE:perlpath: cat Getfile Loc Myread Oldconfig binexp startperl
+?MAKE:perlpath: cat Getfile Loc Myread Oldconfig binexp startperl \
+	version versiononly
 ?MAKE:	-pick add $@ %<
 ?Y:TOP
 ?S:perlpath:
 ?S:	This variable contains the eventual value of the PERLPATH symbol,
 ?S:	which contains the name of the perl interpreter to be used in
-?S:	shell scripts and in the "eval 'exec'" idiom.
+?S:	shell scripts and in the "eval 'exec'" idiom.  This variable is
+?S:	not necessarily the pathname of the file containing the perl
+?S:	interpreter; you must append the executable extension (_exe) if
+?S:	it is not already present.  Note that Perl code that runs during
+?S:	the Perl build process cannot reference this variable, as Perl
+?S:	may not have been installed, or even if installed, may be a
+?S:	different version of Perl.
 ?S:.
 ?C:PERLPATH:
 ?C:	This symbol contains the name of the perl interpreter to be
@@ -42,7 +49,10 @@
 : figure best path for perl in scripts
 case "$perlpath" in
 '')
-	perlpath="$binexp/perl"
+	case "$versiononly" in
+	"$define")	perlpath="$binexp/perl$version";;
+	*)		perlpath="$binexp/perl";;
+	esac
 	case "$startperl" in
 	*!*) ;;
 	*)
